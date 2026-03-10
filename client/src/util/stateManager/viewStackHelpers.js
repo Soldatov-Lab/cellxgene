@@ -38,13 +38,13 @@ Views can be interogated for their type with the following:
 import { clip, isubsetMask, isubset } from "../../annoMatrix";
 import { memoize } from "../dataframe/util";
 
-export function _clipAnnoMatrix(annoMatrix, min, max) {
+export function _clipAnnoMatrix(annoMatrix, min, max, isClipModeClamp = false) {
   /*
   clip the annoMatrix.
   */
   return annoMatrix.isClipped
-    ? clip(annoMatrix.viewOf, min, max)
-    : clip(annoMatrix, min, max);
+    ? clip(annoMatrix.viewOf, min, max, isClipModeClamp)
+    : clip(annoMatrix, min, max, isClipModeClamp);
 }
 
 export function _userSubsetAnnoMatrix(annoMatrix, mask) {

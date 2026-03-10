@@ -40,13 +40,13 @@ export function subsetByIndex(annoMatrix, obsIndex) {
   return new AnnoMatrixRowSubsetView(annoMatrix, obsIndex);
 }
 
-export function clip(annoMatrix, qmin, qmax) {
+export function clip(annoMatrix, qmin, qmax, isClipModeClamp = false) {
   /*
 		Create a view that clips all continuous data to the [min, max] range.
 		The matrix shape does not change, but the continuous values outside the
 		specified range will become a NaN.
 		*/
-  return new AnnoMatrixClipView(annoMatrix, qmin, qmax);
+  return new AnnoMatrixClipView(annoMatrix, qmin, qmax, isClipModeClamp);
 }
 
 /*

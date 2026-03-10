@@ -8,6 +8,7 @@ import {
   Popover,
   Position,
   Tooltip,
+  Switch,
 } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 
@@ -19,6 +20,7 @@ const Clip = React.memo((props) => {
     pendingClipPercentiles,
     clipPercentileMin,
     clipPercentileMax,
+    isClipModeClamp,
     handleClipOpening,
     handleClipClosing,
     handleClipCommit,
@@ -26,12 +28,14 @@ const Clip = React.memo((props) => {
     handleClipOnKeyPress,
     handleClipPercentileMaxValueChange,
     handleClipPercentileMinValueChange,
+    handleClipIsClampChange,
   } = props;
 
   const clipMin =
     pendingClipPercentiles?.clipPercentileMin ?? clipPercentileMin;
   const clipMax =
     pendingClipPercentiles?.clipPercentileMax ?? clipPercentileMax;
+  const isClamp = pendingClipPercentiles?.isClipModeClamp ?? isClipModeClamp;
   const intent =
     clipPercentileMin > 0 || clipPercentileMax < 100
       ? Intent.INTENT_WARNING
@@ -127,6 +131,14 @@ const Clip = React.memo((props) => {
               >
                 Clip
               </Button>
+            </div>
+            <div style={{ paddingTop: 5 }}>
+              <Switch
+                checked={isClamp}
+                label="Clamp extreme values"
+                onChange={handleClipIsClampChange}
+                style={{ marginBottom: 0 }}
+              />
             </div>
           </div>
         }

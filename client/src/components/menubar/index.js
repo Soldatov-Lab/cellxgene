@@ -31,6 +31,7 @@ import { getEmbSubsetView } from "../../util/stateManager/viewStackHelpers";
     graphInteractionMode: state.controls.graphInteractionMode,
     clipPercentileMin: Math.round(100 * (annoMatrix?.clipRange?.[0] ?? 0)),
     clipPercentileMax: Math.round(100 * (annoMatrix?.clipRange?.[1] ?? 1)),
+    isClipModeClamp: !!annoMatrix?.clipRange?.[2],
     userDefinedGenes: state.controls.userDefinedGenes,
     colorAccessor: state.colors.colorAccessor,
     scatterplotXXaccessor: state.controls.scatterplotXXaccessor,
@@ -90,14 +91,19 @@ class MenuBar extends React.PureComponent {
     const {
       clipPercentileMin: currentClipMin,
       clipPercentileMax: currentClipMax,
+      isClipModeClamp: currentClamp,
     } = this.props;
+
+    // pending properties can be undefined depending on how we opened the modal or interacted with form fields
+    const isClamp = pendingClipPercentiles?.isClipModeClamp ?? currentClamp;
 
     // if you change this test, be careful with logic around
     // comparisons between undefined / NaN handling.
     const isDisabled =
       !(clipPercentileMin < clipPercentileMax) ||
       (clipPercentileMin === currentClipMin &&
-        clipPercentileMax === currentClipMax);
+        clipPercentileMax === currentClipMax &&
+        isClamp === currentClamp);
 
     return isDisabled;
   };
@@ -119,7 +125,11 @@ class MenuBar extends React.PureComponent {
     if (!Number.isFinite(v)) return;
 
     const { pendingClipPercentiles } = this.state;
-    const clipPercentileMax = pendingClipPercentiles?.clipPercentileMax;
+    const { clipPercentileMax, isClipModeClamp: currentClamp } = this.props;
+
+    const isClamp = pendingClipPercentiles?.isClipModeClamp ?? currentClamp;
+    const maxVal =
+      pendingClipPercentiles?.clipPercentileMax ?? clipPercentileMax;
 
     /*
     clamp to [0, currentClipPercentileMax]
@@ -128,7 +138,11 @@ class MenuBar extends React.PureComponent {
     if (v > 100) v = 100;
     const clipPercentileMin = Math.round(v); // paranoia
     this.setState({
-      pendingClipPercentiles: { clipPercentileMin, clipPercentileMax },
+      pendingClipPercentiles: {
+        clipPercentileMin,
+        clipPercentileMax: maxVal,
+        isClipModeClamp: isClamp,
+      },
     });
   };
 
@@ -139,7 +153,11 @@ class MenuBar extends React.PureComponent {
     if (!Number.isFinite(v)) return;
 
     const { pendingClipPercentiles } = this.state;
-    const clipPercentileMin = pendingClipPercentiles?.clipPercentileMin;
+    const { clipPercentileMin, isClipModeClamp: currentClamp } = this.props;
+
+    const isClamp = pendingClipPercentiles?.isClipModeClamp ?? currentClamp;
+    const minVal =
+      pendingClipPercentiles?.clipPercentileMin ?? clipPercentileMin;
 
     /*
     clamp to [0, 100]
@@ -149,23 +167,52 @@ class MenuBar extends React.PureComponent {
     const clipPercentileMax = Math.round(v); // paranoia
 
     this.setState({
-      pendingClipPercentiles: { clipPercentileMin, clipPercentileMax },
+      pendingClipPercentiles: {
+        clipPercentileMin: minVal,
+        clipPercentileMax,
+        isClipModeClamp: isClamp,
+      },
+    });
+  };
+
+  handleClipIsClampChange = (e) => {
+    const isClamp = e.target.checked;
+    const { pendingClipPercentiles } = this.state;
+    const { clipPercentileMin, clipPercentileMax } = this.props;
+
+    const minVal =
+      pendingClipPercentiles?.clipPercentileMin ?? clipPercentileMin;
+    const maxVal =
+      pendingClipPercentiles?.clipPercentileMax ?? clipPercentileMax;
+
+    this.setState({
+      pendingClipPercentiles: {
+        clipPercentileMin: minVal,
+        clipPercentileMax: maxVal,
+        isClipModeClamp: isClamp,
+      },
     });
   };
 
   handleClipCommit = () => {
-    const { dispatch } = this.props;
+    const { dispatch, isClipModeClamp } = this.props;
     const { pendingClipPercentiles } = this.state;
     const { clipPercentileMin, clipPercentileMax } = pendingClipPercentiles;
+    const isClamp = pendingClipPercentiles?.isClipModeClamp ?? isClipModeClamp;
     const min = clipPercentileMin / 100;
     const max = clipPercentileMax / 100;
-    dispatch(actions.clipAction(min, max));
+    dispatch(actions.clipAction(min, max, isClamp));
   };
 
   handleClipOpening = () => {
-    const { clipPercentileMin, clipPercentileMax } = this.props;
+    const { clipPercentileMin, clipPercentileMax, isClipModeClamp } =
+      this.props;
     this.setState({
-      pendingClipPercentiles: { clipPercentileMin, clipPercentileMax },
+      pendingClipPercentiles: {
+        clipPercentileMin,
+        clipPercentileMax,
+        isClipModeClamp,
+      },
     });
   };
 
@@ -201,6 +248,7 @@ class MenuBar extends React.PureComponent {
       selectionTool,
       clipPercentileMin,
       clipPercentileMax,
+      isClipModeClamp,
       graphInteractionMode,
       showCentroidLabels,
       categoricalSelection,
@@ -241,6 +289,7 @@ class MenuBar extends React.PureComponent {
           pendingClipPercentiles={pendingClipPercentiles}
           clipPercentileMin={clipPercentileMin}
           clipPercentileMax={clipPercentileMax}
+          isClipModeClamp={isClipModeClamp}
           handleClipOpening={this.handleClipOpening}
           handleClipClosing={this.handleClipClosing}
           handleClipCommit={this.handleClipCommit}
@@ -252,6 +301,7 @@ class MenuBar extends React.PureComponent {
           handleClipPercentileMinValueChange={
             this.handleClipPercentileMinValueChange
           }
+          handleClipIsClampChange={this.handleClipIsClampChange}
         />
         <ContinuousColormap />
         <Tooltip

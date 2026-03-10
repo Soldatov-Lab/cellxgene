@@ -117,12 +117,21 @@ export class AnnoMatrixClipView extends AnnoMatrixMapView {
   /*
 	A view which is a clipped transformation of its parent
 	*/
-  constructor(viewOf, qmin, qmax) {
+  constructor(viewOf, qmin, qmax, isClipModeClamp = false) {
     super(viewOf, (field, colLabel, colSchema, colData, df) =>
-      _clipAnnoMatrix(field, colLabel, colSchema, colData, df, qmin, qmax)
+      _clipAnnoMatrix(
+        field,
+        colLabel,
+        colSchema,
+        colData,
+        df,
+        qmin,
+        qmax,
+        isClipModeClamp
+      )
     );
     this.isClipped = true;
-    this.clipRange = [qmin, qmax];
+    this.clipRange = [qmin, qmax, isClipModeClamp];
     Object.seal(this);
   }
 }
@@ -158,7 +167,16 @@ export class AnnoMatrixRowSubsetView extends AnnoMatrixView {
 Utility functions below
 */
 
-function _clipAnnoMatrix(field, colLabel, colSchema, colData, df, qmin, qmax) {
+function _clipAnnoMatrix(
+  field,
+  colLabel,
+  colSchema,
+  colData,
+  df,
+  qmin,
+  qmax,
+  isClipModeClamp
+) {
   /* only clip obs and var scalar columns */
   if (field !== "obs" && field !== "X") return colData;
   if (!_isContinuousType(colSchema)) return colData;
@@ -169,7 +187,12 @@ function _clipAnnoMatrix(field, colLabel, colSchema, colData, df, qmin, qmax) {
   const quantiles = df.col(colLabel).summarize().percentiles;
   const lower = quantiles[100 * qmin];
   const upper = quantiles[100 * qmax];
-  const clippedData = clip(colData.slice(), lower, upper, Number.NaN);
+  const clippedData = clip(
+    colData.slice(),
+    lower,
+    upper,
+    isClipModeClamp ? undefined : Number.NaN
+  );
   return clippedData;
 }
 

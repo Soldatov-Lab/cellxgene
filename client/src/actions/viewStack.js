@@ -18,21 +18,28 @@ import {
   _userResetSubsetAnnoMatrix,
 } from "../util/stateManager/viewStackHelpers";
 
-export const clipAction = (min, max) => (dispatch, getState) => {
-  /*
+export const clipAction =
+  (min, max, isClipModeClamp = false) =>
+  (dispatch, getState) => {
+    /*
   apply a clip to the current annoMatrix.  By convention, the clip
   view is ALWAYS the top view.
   */
-  const { annoMatrix: prevAnnoMatrix } = getState();
-  const annoMatrix = _clipAnnoMatrix(prevAnnoMatrix, min, max);
-  const obsCrossfilter = new AnnoMatrixObsCrossfilter(annoMatrix);
-  dispatch({
-    type: "set clip quantiles",
-    clipQuantiles: { min, max },
-    annoMatrix,
-    obsCrossfilter,
-  });
-};
+    const { annoMatrix: prevAnnoMatrix } = getState();
+    const annoMatrix = _clipAnnoMatrix(
+      prevAnnoMatrix,
+      min,
+      max,
+      isClipModeClamp
+    );
+    const obsCrossfilter = new AnnoMatrixObsCrossfilter(annoMatrix);
+    dispatch({
+      type: "set clip quantiles",
+      clipQuantiles: { min, max },
+      annoMatrix,
+      obsCrossfilter,
+    });
+  };
 
 export const subsetAction = () => (dispatch, getState) => {
   /*
