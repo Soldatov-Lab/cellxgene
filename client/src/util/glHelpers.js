@@ -109,13 +109,18 @@ export function isMetadataColorMode(colorMode) {
   return metadataColorModes.has(colorMode);
 }
 
-export function computeZOrderForContinuous(colorByData, nObs) {
+export function computeZOrderForContinuous(
+  colorByData,
+  nObs,
+  zOrderMode = "max"
+) {
   /*
   Normalize continuous color-by data to [0, 1] for z-depth ordering.
   Returns a Float32Array of length nObs:
-    - values in [0,1] for finite data (0 = lowest, 1 = highest)
+    - values in [0,1] for finite data (0 = lowest order, 1 = highest order)
     - -1.0 sentinel for non-finite values or when not in continuous mode
   When colorByData is null/undefined, returns all -1 (no z-ordering).
+  zOrderMode determines the rendering order policy.
   */
   const zOrder = new Float32Array(nObs);
   if (!colorByData) {
@@ -144,7 +149,31 @@ export function computeZOrderForContinuous(colorByData, nObs) {
   for (let i = 0; i < nObs; i += 1) {
     const val = colorByData[i];
     if (Number.isFinite(val)) {
-      zOrder[i] = (val - min) / valueRange;
+      const normVal = (val - min) / valueRange;
+
+      switch (zOrderMode) {
+        case "max":
+          zOrder[i] = normVal;
+          break;
+        case "min":
+          zOrder[i] = 1.0 - normVal;
+          break;
+        case "mid":
+          // Mid is [0, 1], with 0.5 mapping to 0, and 0/1 mapping to 1.
+          zOrder[i] = Math.abs(normVal - 0.5) * 2;
+          break;
+        case "mid_rev":
+          // Mid_rev is [0, 1], with 0.5 mapping to 1, and 0/1 mapping to 0.
+          zOrder[i] = 1.0 - Math.abs(normVal - 0.5) * 2;
+          break;
+        case "random":
+          // Deterministic pseudo-random based on the index.
+          zOrder[i] = (Math.sin(i * 12.9898) * 43758.5453) % 1;
+          if (zOrder[i] < 0) zOrder[i] += 1;
+          break;
+        default:
+          zOrder[i] = normVal;
+      }
     } else {
       zOrder[i] = -1.0;
     }

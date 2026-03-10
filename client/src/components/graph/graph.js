@@ -566,9 +566,10 @@ class Graph extends React.Component {
 
     // Compute z-order for continuous color modes
     const nObs = crossfilter.size();
+    const { continuousColormapZOrder } = colorsProp;
     const zOrder = isContinuousColorMode(colorMode)
-      ? computeZOrderForContinuous(colorByData, nObs)
-      : computeZOrderForContinuous(null, nObs);
+      ? computeZOrderForContinuous(colorByData, nObs, continuousColormapZOrder)
+      : computeZOrderForContinuous(null, nObs, continuousColormapZOrder);
 
     const { width, height } = viewport;
     return {

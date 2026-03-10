@@ -36,6 +36,13 @@ export function setContinuousColormapReverseAction(continuousColormapReverse) {
   };
 }
 
+export function setContinuousColormapZOrderAction(zOrder) {
+  return {
+    type: "set continuous colormap zorder",
+    zOrder,
+  };
+}
+
 /*
 return promise fetching user-configured colors
 */
@@ -256,6 +263,7 @@ export default {
   requestUserDefinedGene,
   setContinuousColormapAction,
   setContinuousColormapReverseAction,
+  setContinuousColormapZOrderAction,
   selectContinuousMetadataAction: selnActions.selectContinuousMetadataAction,
   selectCategoricalMetadataAction: selnActions.selectCategoricalMetadataAction,
   selectCategoricalAllMetadataAction:

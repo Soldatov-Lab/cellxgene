@@ -8,6 +8,7 @@ const ColorsReducer = (
     colorAccessor: null /* tissue, Apod */,
     continuousColormap: "viridis",
     continuousColormapReverse: false,
+    continuousColormapZOrder: "max",
   },
   action
 ) => {
@@ -52,6 +53,7 @@ const ColorsReducer = (
         colorAccessor: null,
         continuousColormap: "viridis",
         continuousColormapReverse: false,
+        continuousColormapZOrder: "max",
       };
     }
 
@@ -109,6 +111,12 @@ const ColorsReducer = (
       return {
         ...state,
         continuousColormapReverse: action.continuousColormapReverse,
+      };
+    }
+    case "set continuous colormap zorder": {
+      return {
+        ...state,
+        continuousColormapZOrder: action.zOrder,
       };
     }
 
