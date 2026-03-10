@@ -80,6 +80,7 @@ function createModelTF() {
   colors: state.colors,
   pointDilation: state.pointDilation,
   genesets: state.genesets.genesets,
+  pointScale: state.controls.pointScale,
 }))
 class Graph extends React.Component {
   static createReglState(canvas) {
@@ -262,8 +263,12 @@ class Graph extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { selectionTool, currentSelection, graphInteractionMode } =
-      this.props;
+    const {
+      selectionTool,
+      currentSelection,
+      graphInteractionMode,
+      pointScale,
+    } = this.props;
     const { toolSVG, viewport } = this.state;
     const hasResized =
       prevState.viewport.height !== viewport.height ||
@@ -296,6 +301,9 @@ class Graph extends React.Component {
         stateChanges.tool ? stateChanges.tool : tool,
         stateChanges.container ? stateChanges.container : container
       );
+    }
+    if (prevProps.pointScale !== pointScale) {
+      this.renderCanvas();
     }
     if (Object.keys(stateChanges).length > 0) {
       // eslint-disable-next-line react/no-did-update-set-state --- Preventing update loop via stateChanges and diff checks
@@ -835,7 +843,7 @@ class Graph extends React.Component {
     camera,
     projectionTF
   ) {
-    const { annoMatrix } = this.props;
+    const { annoMatrix, pointScale } = this.props;
     if (!this.reglCanvas || !annoMatrix) return;
 
     const { schema } = annoMatrix;
@@ -857,8 +865,8 @@ class Graph extends React.Component {
       projView,
       nPoints: schema.dataframe.nObs,
       minViewportDimension: Math.min(width, height),
+      pointScale,
     });
-    regl._gl.flush();
   }
 
   render() {

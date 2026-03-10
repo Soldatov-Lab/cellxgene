@@ -14,6 +14,7 @@ export default function drawPointsRegl(regl) {
     uniform mat3 projView;
     uniform float nPoints;
     uniform float minViewportDimension;
+    uniform float pointScale;
 
     varying lowp vec4 fragColor;
 
@@ -35,7 +36,7 @@ export default function drawPointsRegl(regl) {
       getFlags(flag, isBackground, isSelected, isHighlight);
 
       float size = pointSize(nPoints, minViewportDimension, isSelected, isHighlight);
-      gl_PointSize = size * pow(distance, 0.5);
+      gl_PointSize = size * pow(distance, 0.5) * pointScale;
 
       float z;
       if (zOrder >= 0.0) {
@@ -80,6 +81,7 @@ export default function drawPointsRegl(regl) {
       projView: regl.prop("projView"),
       nPoints: regl.prop("nPoints"),
       minViewportDimension: regl.prop("minViewportDimension"),
+      pointScale: regl.prop("pointScale"),
     },
 
     count: regl.prop("count"),

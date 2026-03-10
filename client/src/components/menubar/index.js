@@ -47,6 +47,7 @@ import { getEmbSubsetView } from "../../util/stateManager/viewStackHelpers";
     tosURL: state.config?.parameters?.about_legal_tos,
     privacyURL: state.config?.parameters?.about_legal_privacy,
     categoricalSelection: state.categoricalSelection,
+    pointScale: state.controls.pointScale,
   };
 })
 class MenuBar extends React.PureComponent {
@@ -255,6 +256,7 @@ class MenuBar extends React.PureComponent {
       colorAccessor,
       subsetPossible,
       subsetResetPossible,
+      pointScale,
     } = this.props;
     const { pendingClipPercentiles } = this.state;
 
@@ -354,6 +356,36 @@ class MenuBar extends React.PureComponent {
                   type: "change graph interaction mode",
                   data: "zoom",
                 });
+              }}
+            />
+          </Tooltip>
+        </ButtonGroup>
+        <ButtonGroup className={styles.menubarButton}>
+          <Tooltip
+            content="Increase dot size"
+            position="bottom"
+            hoverOpenDelay={globals.tooltipHoverOpenDelay}
+          >
+            <AnchorButton
+              type="button"
+              data-testid="point-scale-increase"
+              icon="plus"
+              onClick={() => {
+                dispatch({ type: "set point scale", data: pointScale * 1.2 });
+              }}
+            />
+          </Tooltip>
+          <Tooltip
+            content="Decrease dot size"
+            position="bottom"
+            hoverOpenDelay={globals.tooltipHoverOpenDelay}
+          >
+            <AnchorButton
+              type="button"
+              data-testid="point-scale-decrease"
+              icon="minus"
+              onClick={() => {
+                dispatch({ type: "set point scale", data: pointScale / 1.2 });
               }}
             />
           </Tooltip>

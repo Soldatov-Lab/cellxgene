@@ -17,6 +17,7 @@ const Controls = (
     scatterplotXXaccessor: null, // just easier to read
     scatterplotYYaccessor: null,
     graphRenderCounter: 0 /* integer as <Component key={graphRenderCounter} - a change in key forces a remount */,
+    pointScale: 1,
   },
   action
 ) => {
@@ -115,6 +116,11 @@ const Controls = (
         graphRenderCounter: c,
       };
     }
+    case "set point scale":
+      return {
+        ...state,
+        pointScale: action.data,
+      };
 
     /*******************************
               Scatterplot
