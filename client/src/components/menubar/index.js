@@ -10,6 +10,7 @@ import Clip from "./clip";
 import Subset from "./subset";
 import UndoRedoReset from "./undoRedo";
 import DiffexpButtons from "./diffexpButtons";
+import ContinuousColormap from "./colormap";
 import { getEmbSubsetView } from "../../util/stateManager/viewStackHelpers";
 
 @connect((state) => {
@@ -252,6 +253,7 @@ class MenuBar extends React.PureComponent {
             this.handleClipPercentileMinValueChange
           }
         />
+        <ContinuousColormap />
         <Tooltip
           content="When a category is colored by, show labels on the graph"
           position="bottom"

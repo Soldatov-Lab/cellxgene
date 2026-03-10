@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { interpolateCool } from "d3-scale-chromatic";
 import * as d3 from "d3";
+
+import { continuousColormaps } from "../../util/stateManager/colorHelpers";
 
 import maybeScientific from "../../util/maybeScientific";
 import clamp from "../../util/clamp";
@@ -18,6 +19,8 @@ const Histogram = ({
   isColorBy,
   selectionRange,
   mini,
+  continuousColormap,
+  continuousColormapReverse,
 }) => {
   const svgRef = useRef(null);
   const [brush, setBrush] = useState(null);
@@ -49,8 +52,15 @@ const Histogram = ({
       .attr("class", "histogram-container")
       .attr("transform", `translate(${marginLeft},${marginTop})`);
 
+    let interpolator =
+      continuousColormaps[continuousColormap] || continuousColormaps.viridis;
+    if (continuousColormapReverse) {
+      const originalInterpolator = interpolator;
+      interpolator = (t) => originalInterpolator(1.0 - t);
+    }
+
     const colorScale = d3
-      .scaleSequential(interpolateCool)
+      .scaleSequential(interpolator)
       .domain([0, bins.length]);
 
     const histogramScale = d3
@@ -139,7 +149,7 @@ const Histogram = ({
 
       setBrush({ brushX, brushXselection });
     }
-  }, [histogram, isColorBy]);
+  }, [histogram, isColorBy, continuousColormap, continuousColormapReverse]);
 
   useEffect(() => {
     /*

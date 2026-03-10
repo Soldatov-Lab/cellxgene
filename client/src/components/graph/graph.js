@@ -798,13 +798,21 @@ class Graph extends React.Component {
       );
     }
 
-    const { colorAccessor, userColors, colorMode } = colors;
+    const {
+      colorAccessor,
+      userColors,
+      colorMode,
+      continuousColormap,
+      continuousColormapReverse,
+    } = colors;
     return createColorTable(
       colorMode,
       colorAccessor,
       colorDf,
       schema,
-      userColors
+      userColors,
+      continuousColormap,
+      continuousColormapReverse
     );
   }
 

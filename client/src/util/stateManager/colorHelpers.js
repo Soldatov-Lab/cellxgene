@@ -2,11 +2,27 @@
 Helper functions for the embedded graph colors
 */
 import * as d3 from "d3";
-import { interpolateRainbow, interpolateCool } from "d3-scale-chromatic";
+import {
+  interpolateRainbow,
+  interpolateCool,
+  interpolateViridis,
+  interpolateInferno,
+  interpolateReds,
+  interpolateBlues,
+  interpolateRdBu,
+} from "d3-scale-chromatic";
 import memoize from "memoize-one";
 import * as globals from "../../globals";
 import parseRGB from "../parseRGB";
 import { range } from "../range";
+
+export const continuousColormaps = {
+  viridis: interpolateViridis,
+  inferno: interpolateInferno,
+  Reds: interpolateReds,
+  Blues: interpolateBlues,
+  RdBu: interpolateRdBu,
+};
 
 /*
 given a color mode & accessor, generate an annoMatrix query that will
@@ -88,7 +104,9 @@ function _createColorTable(
   colorByAccessor,
   colorByData,
   schema,
-  userColors = null
+  userColors = null,
+  continuousColormap = "viridis",
+  continuousColormapReverse = false
 ) {
   switch (colorMode) {
     case "color by categorical metadata": {
@@ -101,17 +119,35 @@ function _createColorTable(
     case "color by continuous metadata": {
       const col = colorByData.col(colorByAccessor);
       const { min, max } = col.summarize();
-      return createColorsByContinuousMetadata(col.asArray(), min, max);
+      return createColorsByContinuousMetadata(
+        col.asArray(),
+        min,
+        max,
+        continuousColormap,
+        continuousColormapReverse
+      );
     }
     case "color by expression": {
       const col = colorByData.icol(0);
       const { min, max } = col.summarize();
-      return createColorsByContinuousMetadata(col.asArray(), min, max);
+      return createColorsByContinuousMetadata(
+        col.asArray(),
+        min,
+        max,
+        continuousColormap,
+        continuousColormapReverse
+      );
     }
     case "color by geneset mean expression": {
       const col = colorByData.icol(0);
       const { min, max } = col.summarize();
-      return createColorsByContinuousMetadata(col.asArray(), min, max);
+      return createColorsByContinuousMetadata(
+        col.asArray(),
+        min,
+        max,
+        continuousColormap,
+        continuousColormapReverse
+      );
     }
     default: {
       return defaultColors(schema.dataframe.nObs);
@@ -188,7 +224,13 @@ function createRgbArray(data, colors) {
   return rgb;
 }
 
-function _createColorsByContinuousMetadata(data, min, max) {
+function _createColorsByContinuousMetadata(
+  data,
+  min,
+  max,
+  continuousColormap,
+  continuousColormapReverse
+) {
   const colorBins = 100;
   const scale = d3
     .scaleQuantile()
@@ -197,8 +239,12 @@ function _createColorsByContinuousMetadata(data, min, max) {
 
   /* pre-create colors - much faster than doing it for each obs */
   const colors = new Array(colorBins);
+  const interpolator =
+    continuousColormaps[continuousColormap] || interpolateCool;
   for (let i = 0; i < colorBins; i += 1) {
-    colors[i] = parseRGB(interpolateCool(i / colorBins));
+    const fraction = i / colorBins;
+    const finalFraction = continuousColormapReverse ? 1.0 - fraction : fraction;
+    colors[i] = parseRGB(interpolator(finalFraction));
   }
 
   const nonFiniteColor = parseRGB(globals.nonFiniteCellColor);

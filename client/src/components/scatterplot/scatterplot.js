@@ -333,13 +333,21 @@ class Scatterplot extends React.PureComponent {
     /* update color table state */
     const { annoMatrix } = this.props;
     const { schema } = annoMatrix;
-    const { colorAccessor, userColors, colorMode } = colors;
+    const {
+      colorAccessor,
+      userColors,
+      colorMode,
+      continuousColormap,
+      continuousColormapReverse,
+    } = colors;
     return createColorTable(
       colorMode,
       colorAccessor,
       colorDf,
       schema,
-      userColors
+      userColors,
+      continuousColormap,
+      continuousColormapReverse
     );
   }
 

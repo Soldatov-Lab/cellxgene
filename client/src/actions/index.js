@@ -22,6 +22,20 @@ function setGlobalConfig(config) {
     globals.globalConfig.maxCategoricalOptionsToDisplay;
 }
 
+export function setContinuousColormapAction(colormap) {
+  return {
+    type: "set continuous colormap",
+    colormap,
+  };
+}
+
+export function setContinuousColormapReverseAction(continuousColormapReverse) {
+  return {
+    type: "set continuous colormap reverse",
+    continuousColormapReverse,
+  };
+}
+
 /*
 return promise fetching user-configured colors
 */
@@ -240,6 +254,8 @@ export default {
   requestDifferentialExpression,
   requestSingleGeneExpressionCountsForColoringPOST,
   requestUserDefinedGene,
+  setContinuousColormapAction,
+  setContinuousColormapReverseAction,
   selectContinuousMetadataAction: selnActions.selectContinuousMetadataAction,
   selectCategoricalMetadataAction: selnActions.selectCategoricalMetadataAction,
   selectCategoricalAllMetadataAction:

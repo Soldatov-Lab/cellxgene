@@ -6,6 +6,8 @@ const ColorsReducer = (
   state = {
     colorMode: null /* by continuous, by expression */,
     colorAccessor: null /* tissue, Apod */,
+    continuousColormap: "viridis",
+    continuousColormapReverse: false,
   },
   action
 ) => {
@@ -48,6 +50,8 @@ const ColorsReducer = (
         ...state,
         colorMode: null,
         colorAccessor: null,
+        continuousColormap: "viridis",
+        continuousColormapReverse: false,
       };
     }
 
@@ -93,6 +97,18 @@ const ColorsReducer = (
         ...state,
         colorMode,
         colorAccessor,
+      };
+    }
+    case "set continuous colormap": {
+      return {
+        ...state,
+        continuousColormap: action.colormap,
+      };
+    }
+    case "set continuous colormap reverse": {
+      return {
+        ...state,
+        continuousColormapReverse: action.continuousColormapReverse,
       };
     }
 

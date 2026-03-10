@@ -1,11 +1,11 @@
 import React from "react";
 import { connect } from "react-redux";
 import * as d3 from "d3";
-import { interpolateCool } from "d3-scale-chromatic";
 
 import {
   createColorTable,
   createColorQuery,
+  continuousColormaps,
 } from "../../util/stateManager/colorHelpers";
 
 // create continuous color legend
@@ -117,7 +117,13 @@ class ContinuousLegend extends React.Component {
 
     if (colors !== prevProps?.colors || annoMatrix !== prevProps?.annoMatrix) {
       const { schema } = annoMatrix;
-      const { colorMode, colorAccessor, userColors } = colors;
+      const {
+        colorMode,
+        colorAccessor,
+        userColors,
+        continuousColormap,
+        continuousColormapReverse,
+      } = colors;
 
       const colorQuery = createColorQuery(
         colorMode,
@@ -132,7 +138,9 @@ class ContinuousLegend extends React.Component {
         colorAccessor,
         colorDf,
         schema,
-        userColors
+        userColors,
+        continuousColormap,
+        continuousColormapReverse
       );
 
       const colorScale = colorTable.scale;
@@ -145,9 +153,17 @@ class ContinuousLegend extends React.Component {
       if (colorAccessor && colorScale && range && domainMin < domainMax) {
         /* fragile! continuous range is 0 to 1, not [#fa4b2c, ...], make this a flag? */
         if (range()[0][0] !== "#") {
+          let interpolator =
+            continuousColormaps[continuousColormap] ||
+            continuousColormaps.viridis;
+          if (continuousColormapReverse) {
+            const originalInterpolator = interpolator;
+            interpolator = (t) => originalInterpolator(1.0 - t);
+          }
+
           continuous(
             "#continuous_legend",
-            d3.scaleSequential(interpolateCool).domain(colorScale.domain()),
+            d3.scaleSequential(interpolator).domain(colorScale.domain()),
             colorAccessor
           );
         }
