@@ -8,6 +8,7 @@ export default function drawPointsRegl(regl) {
     attribute vec2 position;
     attribute vec3 color;
     attribute float flag;
+    attribute float zOrder;
 
     uniform mat3 projection;
     uniform float nPoints;
@@ -18,6 +19,9 @@ export default function drawPointsRegl(regl) {
     const float zBottom = 0.99;
     const float zMiddle = 0.;
     const float zTop = -1.;
+    // zGap: minimum distance between a z=0 continuous point and true background,
+    // ensures values at the low end are still rendered in front of background.
+    const float zGap = 0.01;
 
     // import getFlags()
     ${glPointFlags}
@@ -31,7 +35,19 @@ export default function drawPointsRegl(regl) {
 
       gl_PointSize = pointSize(nPoints, minViewportDimension, isSelected, isHighlight);
 
-      float z = isBackground ? zBottom : (isHighlight ? zTop : zMiddle);
+      float z;
+      if (zOrder >= 0.0) {
+        // Continuous mode: interpolate z from zBottom (low value) to zMiddle (high value).
+        if (isBackground) {
+          z = zBottom;
+        } else {
+          z = mix(zBottom - zGap, zMiddle, zOrder);
+          if (isHighlight) z = zTop;
+        }
+      } else {
+        // Categorical / default mode: use existing flag-based z
+        z = isBackground ? zBottom : (isHighlight ? zTop : zMiddle);
+      }
       vec3 xy = projection * vec3(position, 1.);
       gl_Position = vec4(xy.xy, z, 1.);
 
@@ -53,6 +69,7 @@ export default function drawPointsRegl(regl) {
       position: regl.prop("position"),
       color: regl.prop("color"),
       flag: regl.prop("flag"),
+      zOrder: regl.prop("zOrder"),
     },
 
     uniforms: {
@@ -64,6 +81,11 @@ export default function drawPointsRegl(regl) {
     count: regl.prop("count"),
 
     primitive: "points",
+
+    depth: {
+      enable: true,
+      func: "<=",
+    },
 
     blend: {
       enable: true,

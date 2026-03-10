@@ -25,6 +25,9 @@ import {
   flagBackground,
   flagSelected,
   flagHighlight,
+  isContinuousColorMode,
+  isMetadataColorMode,
+  computeZOrderForContinuous,
 } from "../../util/glHelpers";
 
 /*
@@ -92,6 +95,7 @@ class Graph extends React.Component {
     const pointBuffer = regl.buffer();
     const colorBuffer = regl.buffer();
     const flagBuffer = regl.buffer();
+    const zOrderBuffer = regl.buffer();
 
     return {
       camera,
@@ -100,6 +104,7 @@ class Graph extends React.Component {
       pointBuffer,
       colorBuffer,
       flagBuffer,
+      zOrderBuffer,
     };
   }
 
@@ -232,6 +237,7 @@ class Graph extends React.Component {
       pointBuffer: null,
       colorBuffer: null,
       flagBuffer: null,
+      zOrderBuffer: null,
 
       // component rendering derived state - these must stay synchronized
       // with the reducer state they were generated from.
@@ -317,7 +323,10 @@ class Graph extends React.Component {
     if (e.type !== "wheel") e.preventDefault();
     if (camera.handleEvent(e, projectionTF)) {
       this.renderCanvas();
-      this.setState((state) => ({ ...state, updateOverlay: !state.updateOverlay }));
+      this.setState((state) => ({
+        ...state,
+        updateOverlay: !state.updateOverlay,
+      }));
     }
   };
 
@@ -535,8 +544,12 @@ class Graph extends React.Component {
     const colorTable = this.updateColorTable(colorsProp, colorDf);
     const colors = this.computePointColors(colorTable.rgb);
 
-    const { colorAccessor } = colorsProp;
-    const colorByData = colorDf?.col(colorAccessor)?.asArray();
+    const { colorAccessor, colorMode } = colorsProp;
+    const colorByData = colorDf
+      ? isMetadataColorMode(colorMode)
+        ? colorDf.col(colorAccessor)?.asArray()
+        : colorDf.icol(0)?.asArray()
+      : null;
     const {
       metadataField: pointDilationCategory,
       categoryField: pointDilationLabel,
@@ -551,11 +564,18 @@ class Graph extends React.Component {
       pointDilationLabel
     );
 
+    // Compute z-order for continuous color modes
+    const nObs = crossfilter.size();
+    const zOrder = isContinuousColorMode(colorMode)
+      ? computeZOrderForContinuous(colorByData, nObs)
+      : computeZOrderForContinuous(null, nObs);
+
     const { width, height } = viewport;
     return {
       positions,
       colors,
       flags,
+      zOrder,
       width,
       height,
     };
@@ -719,6 +739,7 @@ class Graph extends React.Component {
       colorBuffer,
       pointBuffer,
       flagBuffer,
+      zOrderBuffer,
       camera,
       projectionTF,
     } = this.state;
@@ -728,15 +749,16 @@ class Graph extends React.Component {
       colorBuffer,
       pointBuffer,
       flagBuffer,
+      zOrderBuffer,
       camera,
       projectionTF
     );
   });
 
   updateReglAndRender(asyncProps, prevAsyncProps) {
-    const { positions, colors, flags, height, width } = asyncProps;
+    const { positions, colors, flags, zOrder, height, width } = asyncProps;
     this.cachedAsyncProps = asyncProps;
-    const { pointBuffer, colorBuffer, flagBuffer } = this.state;
+    const { pointBuffer, colorBuffer, flagBuffer, zOrderBuffer } = this.state;
     let needToRenderCanvas = false;
 
     if (height !== prevAsyncProps?.height || width !== prevAsyncProps?.width) {
@@ -752,6 +774,10 @@ class Graph extends React.Component {
     }
     if (flags !== prevAsyncProps?.flags) {
       flagBuffer({ data: flags, dimension: 1 });
+      needToRenderCanvas = true;
+    }
+    if (zOrder !== prevAsyncProps?.zOrder) {
+      zOrderBuffer({ data: zOrder, dimension: 1 });
       needToRenderCanvas = true;
     }
     if (needToRenderCanvas) this.renderCanvas();
@@ -796,6 +822,7 @@ class Graph extends React.Component {
     colorBuffer,
     pointBuffer,
     flagBuffer,
+    zOrderBuffer,
     camera,
     projectionTF
   ) {
@@ -816,6 +843,7 @@ class Graph extends React.Component {
       color: colorBuffer,
       position: pointBuffer,
       flag: flagBuffer,
+      zOrder: zOrderBuffer,
       count: annoMatrix.nObs,
       projView,
       nPoints: schema.dataframe.nObs,
@@ -951,32 +979,29 @@ const ErrorLoading = ({ displayName, error, width, height }) => {
   );
 };
 
-const StillLoading = ({ displayName, width, height }) => 
+const StillLoading = ({ displayName, width, height }) => (
   /*
   Render a busy/loading indicator
   */
-   (
+  <div
+    style={{
+      position: "fixed",
+      fontWeight: 500,
+      top: height / 2,
+      width,
+    }}
+  >
     <div
       style={{
-        position: "fixed",
-        fontWeight: 500,
-        top: height / 2,
-        width,
+        display: "flex",
+        justifyContent: "center",
+        justifyItems: "center",
+        alignItems: "center",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          justifyItems: "center",
-          alignItems: "center",
-        }}
-      >
-        <Button minimal loading intent="primary" />
-        <span style={{ fontStyle: "italic" }}>Loading {displayName}</span>
-      </div>
+      <Button minimal loading intent="primary" />
+      <span style={{ fontStyle: "italic" }}>Loading {displayName}</span>
     </div>
-  )
-;
-
+  </div>
+);
 export default Graph;

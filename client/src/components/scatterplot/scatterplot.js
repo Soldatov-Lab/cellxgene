@@ -20,6 +20,9 @@ import {
   flagBackground,
   flagSelected,
   flagHighlight,
+  isContinuousColorMode,
+  isMetadataColorMode,
+  computeZOrderForContinuous,
 } from "../../util/glHelpers";
 
 function createProjectionTF(viewportWidth, viewportHeight) {
@@ -73,6 +76,7 @@ class Scatterplot extends React.PureComponent {
     const pointBuffer = regl.buffer();
     const colorBuffer = regl.buffer();
     const flagBuffer = regl.buffer();
+    const zOrderBuffer = regl.buffer();
 
     return {
       regl,
@@ -80,6 +84,7 @@ class Scatterplot extends React.PureComponent {
       pointBuffer,
       colorBuffer,
       flagBuffer,
+      zOrderBuffer,
     };
   }
 
@@ -218,9 +223,9 @@ class Scatterplot extends React.PureComponent {
   };
 
   getViewportDimensions = () => ({
-      height: window.innerHeight,
-      width: window.innerWidth,
-    });
+    height: window.innerHeight,
+    width: window.innerWidth,
+  });
 
   handleResize = () => {
     const { state } = this.state;
@@ -262,8 +267,12 @@ class Scatterplot extends React.PureComponent {
 
     const colors = this.computePointColors(colorTable.rgb);
 
-    const { colorAccessor } = colorsProp;
-    const colorByData = colorDf?.col(colorAccessor)?.asArray();
+    const { colorAccessor, colorMode } = colorsProp;
+    const colorByData = colorDf
+      ? isMetadataColorMode(colorMode)
+        ? colorDf.col(colorAccessor)?.asArray()
+        : colorDf.icol(0)?.asArray()
+      : null;
     const {
       metadataField: pointDilationCategory,
       categoryField: pointDilationLabel,
@@ -278,10 +287,17 @@ class Scatterplot extends React.PureComponent {
       pointDilationLabel
     );
 
+    // Compute z-order for continuous color modes
+    const nObs = crossfilter.size();
+    const zOrder = isContinuousColorMode(colorMode)
+      ? computeZOrderForContinuous(colorByData, nObs)
+      : computeZOrderForContinuous(null, nObs);
+
     return {
       positions,
       colors,
       flags,
+      zOrder,
       width,
       height,
       xScale,
@@ -370,6 +386,7 @@ class Scatterplot extends React.PureComponent {
       colorBuffer,
       pointBuffer,
       flagBuffer,
+      zOrderBuffer,
       projectionTF,
     } = this.state;
     this.renderPoints(
@@ -378,18 +395,35 @@ class Scatterplot extends React.PureComponent {
       flagBuffer,
       colorBuffer,
       pointBuffer,
+      zOrderBuffer,
       projectionTF
     );
   });
 
   updateReglAndRender(newRenderCache) {
-    const { positions, colors, flags } = newRenderCache;
+    const { positions, colors, flags, zOrder } = newRenderCache;
+    const prevRenderCache = this.renderCache;
     this.renderCache = newRenderCache;
-    const { pointBuffer, colorBuffer, flagBuffer } = this.state;
-    pointBuffer({ data: positions, dimension: 2 });
-    colorBuffer({ data: colors, dimension: 3 });
-    flagBuffer({ data: flags, dimension: 1 });
-    this.renderCanvas();
+    const { pointBuffer, colorBuffer, flagBuffer, zOrderBuffer } = this.state;
+    let needToRenderCanvas = false;
+
+    if (positions !== prevRenderCache?.positions) {
+      pointBuffer({ data: positions, dimension: 2 });
+      needToRenderCanvas = true;
+    }
+    if (colors !== prevRenderCache?.colors) {
+      colorBuffer({ data: colors, dimension: 3 });
+      needToRenderCanvas = true;
+    }
+    if (flags !== prevRenderCache?.flags) {
+      flagBuffer({ data: flags, dimension: 1 });
+      needToRenderCanvas = true;
+    }
+    if (zOrder !== prevRenderCache?.zOrder) {
+      zOrderBuffer({ data: zOrder, dimension: 1 });
+      needToRenderCanvas = true;
+    }
+    if (needToRenderCanvas) this.renderCanvas();
   }
 
   renderPoints(
@@ -398,6 +432,7 @@ class Scatterplot extends React.PureComponent {
     flagBuffer,
     colorBuffer,
     pointBuffer,
+    zOrderBuffer,
     projectionTF
   ) {
     const { annoMatrix } = this.props;
@@ -414,6 +449,7 @@ class Scatterplot extends React.PureComponent {
       flag: flagBuffer,
       color: colorBuffer,
       position: pointBuffer,
+      zOrder: zOrderBuffer,
       projection: projectionTF,
       count: annoMatrix.nObs,
       nPoints: schema.dataframe.nObs,

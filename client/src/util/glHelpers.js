@@ -85,3 +85,69 @@ export const glPointSize = `
     return pointSize / 3.;
   }
 `;
+
+/*
+Continuous color mode helpers
+*/
+const continuousColorModes = new Set([
+  "color by continuous metadata",
+  "color by expression",
+  "color by geneset mean expression",
+]);
+
+const metadataColorModes = new Set([
+  "color by categorical metadata",
+  "color by continuous metadata",
+]);
+
+export function isContinuousColorMode(colorMode) {
+  return continuousColorModes.has(colorMode);
+}
+
+/** Returns true for obs-metadata color modes where colorDf is indexed by column name (col()). */
+export function isMetadataColorMode(colorMode) {
+  return metadataColorModes.has(colorMode);
+}
+
+export function computeZOrderForContinuous(colorByData, nObs) {
+  /*
+  Normalize continuous color-by data to [0, 1] for z-depth ordering.
+  Returns a Float32Array of length nObs:
+    - values in [0,1] for finite data (0 = lowest, 1 = highest)
+    - -1.0 sentinel for non-finite values or when not in continuous mode
+  When colorByData is null/undefined, returns all -1 (no z-ordering).
+  */
+  const zOrder = new Float32Array(nObs);
+  if (!colorByData) {
+    zOrder.fill(-1.0);
+    return zOrder;
+  }
+
+  // find min/max of finite values
+  let min = Infinity;
+  let max = -Infinity;
+  for (let i = 0; i < nObs; i += 1) {
+    const val = colorByData[i];
+    if (Number.isFinite(val)) {
+      if (val < min) min = val;
+      if (val > max) max = val;
+    }
+  }
+
+  const valueRange = max - min;
+  if (valueRange === 0 || !Number.isFinite(valueRange)) {
+    // all same value or no finite values — no z-ordering
+    zOrder.fill(-1.0);
+    return zOrder;
+  }
+
+  for (let i = 0; i < nObs; i += 1) {
+    const val = colorByData[i];
+    if (Number.isFinite(val)) {
+      zOrder[i] = (val - min) / valueRange;
+    } else {
+      zOrder[i] = -1.0;
+    }
+  }
+  return zOrder;
+}
