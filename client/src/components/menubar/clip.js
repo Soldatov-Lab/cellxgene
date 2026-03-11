@@ -85,7 +85,7 @@ const Clip = React.memo((props) => {
               }}
             >
               <NumericInput
-                style={{ width: 50 }}
+                style={{ width: 65 }}
                 data-testid="clip-min-input"
                 onValueChange={handleClipPercentileMinValueChange}
                 onKeyPress={handleClipOnKeyPress}
@@ -93,7 +93,8 @@ const Clip = React.memo((props) => {
                 min={0}
                 max={100}
                 fill={false}
-                minorStepSize={null}
+                minorStepSize={0.1}
+                stepSize={1}
                 rightElement={
                   <div style={{ padding: "4px 2px" }}>
                     <Icon icon="percentage" intent="primary" iconSize={14} />
@@ -102,7 +103,7 @@ const Clip = React.memo((props) => {
               />
               <span style={{ marginRight: 5, marginLeft: 5 }}> - </span>
               <NumericInput
-                style={{ width: 50 }}
+                style={{ width: 65 }}
                 data-testid="clip-max-input"
                 onValueChange={handleClipPercentileMaxValueChange}
                 onKeyPress={handleClipOnKeyPress}
@@ -110,7 +111,8 @@ const Clip = React.memo((props) => {
                 min={0}
                 max={100}
                 fill={false}
-                minorStepSize={null}
+                minorStepSize={0.1}
+                stepSize={1}
                 rightElement={
                   <div style={{ padding: "4px 2px" }}>
                     <Icon icon="percentage" intent="primary" iconSize={14} />

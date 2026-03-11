@@ -29,8 +29,10 @@ import { getEmbSubsetView } from "../../util/stateManager/viewStackHelpers";
     subsetPossible,
     subsetResetPossible,
     graphInteractionMode: state.controls.graphInteractionMode,
-    clipPercentileMin: Math.round(100 * (annoMatrix?.clipRange?.[0] ?? 0)),
-    clipPercentileMax: Math.round(100 * (annoMatrix?.clipRange?.[1] ?? 1)),
+    clipPercentileMin:
+      Math.round(100000 * (annoMatrix?.clipRange?.[0] ?? 0)) / 1000,
+    clipPercentileMax:
+      Math.round(100000 * (annoMatrix?.clipRange?.[1] ?? 1)) / 1000,
     isClipModeClamp: !!annoMatrix?.clipRange?.[2],
     userDefinedGenes: state.controls.userDefinedGenes,
     colorAccessor: state.colors.colorAccessor,
@@ -70,6 +72,7 @@ class MenuBar extends React.PureComponent {
     // beyond printing a character--we don't want to disable their effects.
     const isSingleCharKey = e.key.length === 1;
     if (!isSingleCharKey) return true;
+    if (e.key === ".") return true;
 
     const key = e.key.charCodeAt(0) - 48; /* "0" */
     return key >= 0 && key <= 9;
@@ -100,10 +103,21 @@ class MenuBar extends React.PureComponent {
 
     // if you change this test, be careful with logic around
     // comparisons between undefined / NaN handling.
+    const min =
+      clipPercentileMin !== undefined
+        ? Number(clipPercentileMin)
+        : currentClipMin;
+    const max =
+      clipPercentileMax !== undefined
+        ? Number(clipPercentileMax)
+        : currentClipMax;
+
     const isDisabled =
-      !(clipPercentileMin < clipPercentileMax) ||
-      (clipPercentileMin === currentClipMin &&
-        clipPercentileMax === currentClipMax &&
+      !(min < max) ||
+      min < 0 ||
+      max > 100 ||
+      (min === currentClipMin &&
+        max === currentClipMax &&
         isClamp === currentClamp);
 
     return isDisabled;
@@ -119,12 +133,7 @@ class MenuBar extends React.PureComponent {
     }
   };
 
-  handleClipPercentileMinValueChange = (v) => {
-    /*
-    Ignore anything that isn't a legit number
-    */
-    if (!Number.isFinite(v)) return;
-
+  handleClipPercentileMinValueChange = (v, vString) => {
     const { pendingClipPercentiles } = this.state;
     const { clipPercentileMax, isClipModeClamp: currentClamp } = this.props;
 
@@ -132,27 +141,16 @@ class MenuBar extends React.PureComponent {
     const maxVal =
       pendingClipPercentiles?.clipPercentileMax ?? clipPercentileMax;
 
-    /*
-    clamp to [0, currentClipPercentileMax]
-    */
-    if (v <= 0) v = 0;
-    if (v > 100) v = 100;
-    const clipPercentileMin = Math.round(v); // paranoia
     this.setState({
       pendingClipPercentiles: {
-        clipPercentileMin,
+        clipPercentileMin: vString,
         clipPercentileMax: maxVal,
         isClipModeClamp: isClamp,
       },
     });
   };
 
-  handleClipPercentileMaxValueChange = (v) => {
-    /*
-    Ignore anything that isn't a legit number
-    */
-    if (!Number.isFinite(v)) return;
-
+  handleClipPercentileMaxValueChange = (v, vString) => {
     const { pendingClipPercentiles } = this.state;
     const { clipPercentileMin, isClipModeClamp: currentClamp } = this.props;
 
@@ -160,17 +158,10 @@ class MenuBar extends React.PureComponent {
     const minVal =
       pendingClipPercentiles?.clipPercentileMin ?? clipPercentileMin;
 
-    /*
-    clamp to [0, 100]
-    */
-    if (v < 0) v = 0;
-    if (v > 100) v = 100;
-    const clipPercentileMax = Math.round(v); // paranoia
-
     this.setState({
       pendingClipPercentiles: {
         clipPercentileMin: minVal,
-        clipPercentileMax,
+        clipPercentileMax: vString,
         isClipModeClamp: isClamp,
       },
     });
@@ -200,8 +191,8 @@ class MenuBar extends React.PureComponent {
     const { pendingClipPercentiles } = this.state;
     const { clipPercentileMin, clipPercentileMax } = pendingClipPercentiles;
     const isClamp = pendingClipPercentiles?.isClipModeClamp ?? isClipModeClamp;
-    const min = clipPercentileMin / 100;
-    const max = clipPercentileMax / 100;
+    const min = Number(clipPercentileMin) / 100;
+    const max = Number(clipPercentileMax) / 100;
     dispatch(actions.clipAction(min, max, isClamp));
   };
 

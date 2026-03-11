@@ -9,8 +9,8 @@ partition at some point.
 import quantile from "../quantile";
 import { sortArray } from "../typedCrossfilter/sort";
 
-// [ 0, 0.01, 0.02, ..., 1.0]
-const centileNames = new Array(101).fill(0).map((v, idx) => idx / 100);
+// [ 0, 0.0001, 0.0002, ..., 1.0]
+const centileNames = new Array(10001).fill(0).map((v, idx) => idx / 10000);
 
 export function summarizeContinuous(col) {
   let min;
@@ -50,7 +50,7 @@ export function summarizeContinuous(col) {
     );
     percentiles = quantile(centileNames, sortedColFiniteOnly, true);
     min = percentiles[0];
-    max = percentiles[100];
+    max = percentiles[10000];
   }
   return {
     categorical: false,
