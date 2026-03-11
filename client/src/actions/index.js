@@ -280,6 +280,7 @@ export default {
   clipAction: viewActions.clipAction,
   subsetAction: viewActions.subsetAction,
   resetSubsetAction: viewActions.resetSubsetAction,
+  invertSelectionAction: selnActions.invertSelectionAction,
   annotationCreateCategoryAction: annoActions.annotationCreateCategoryAction,
   annotationRenameCategoryAction: annoActions.annotationRenameCategoryAction,
   annotationDeleteCategoryAction: annoActions.annotationDeleteCategoryAction,

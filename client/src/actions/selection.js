@@ -1,6 +1,8 @@
 /*
 Action creators for selection 
 */
+import { AnnoMatrixObsCrossfilter } from "../annoMatrix";
+
 export const selectContinuousMetadataAction =
   (type, query, range, oldProps = {}) =>
   async (dispatch, getState) => {
@@ -105,16 +107,29 @@ export const graphBrushStartAction = () =>
   /* no change to crossfilter until a change fires */
   ({ type: "graph brush start" });
 
+function _dropInvertDimension(obsCrossfilter) {
+  if (obsCrossfilter.obsCrossfilter.hasDimension("__invert__")) {
+    const newTypedCrossfilter =
+      obsCrossfilter.obsCrossfilter.delDimension("__invert__");
+    return new AnnoMatrixObsCrossfilter(
+      obsCrossfilter.annoMatrix,
+      newTypedCrossfilter
+    );
+  }
+  return obsCrossfilter;
+}
+
 const _graphBrushWithinRectAction =
   (type, embName, brushCoords) => async (dispatch, getState) => {
     const { obsCrossfilter: prevObsCrossfilter } = getState();
 
     const selection = { mode: "within-rect", ...brushCoords };
-    const obsCrossfilter = await prevObsCrossfilter.select(
+    let obsCrossfilter = await prevObsCrossfilter.select(
       "emb",
       embName,
       selection
     );
+    obsCrossfilter = _dropInvertDimension(obsCrossfilter);
 
     dispatch({
       type,
@@ -126,9 +141,10 @@ const _graphBrushWithinRectAction =
 const _graphAllAction = (type, embName) => async (dispatch, getState) => {
   const { obsCrossfilter: prevObsCrossfilter } = getState();
 
-  const obsCrossfilter = await prevObsCrossfilter.select("emb", embName, {
+  let obsCrossfilter = await prevObsCrossfilter.select("emb", embName, {
     mode: "all",
   });
+  obsCrossfilter = _dropInvertDimension(obsCrossfilter);
 
   dispatch({
     type,
@@ -165,11 +181,12 @@ export const graphLassoEndAction =
       mode: "within-polygon",
       polygon,
     };
-    const obsCrossfilter = await prevObsCrossfilter.select(
+    let obsCrossfilter = await prevObsCrossfilter.select(
       "emb",
       embName,
       selection
     );
+    obsCrossfilter = _dropInvertDimension(obsCrossfilter);
 
     dispatch({
       type: "graph lasso end",
@@ -188,5 +205,36 @@ export const setCellSetFromSelection = (cellSetId) => (dispatch, getState) => {
   dispatch({
     type: `store current cell selection as differential set ${cellSetId}`,
     data: selected.length > 0 ? selected : null,
+  });
+};
+
+export const invertSelectionAction = () => (dispatch, getState) => {
+  const { annoMatrix, obsCrossfilter: prevObsCrossfilter } = getState();
+  const currentMask = prevObsCrossfilter.allSelectedMask();
+
+  const invertedMask = new Uint8Array(currentMask.length);
+  for (let i = 0, len = currentMask.length; i < len; i += 1) {
+    invertedMask[i] = currentMask[i] ? 0 : 1;
+  }
+
+  const clearedCrossfilter = prevObsCrossfilter.selectAll();
+  let baseTypedCrossfilter = clearedCrossfilter.obsCrossfilter;
+
+  if (baseTypedCrossfilter.hasDimension("__invert__")) {
+    baseTypedCrossfilter = baseTypedCrossfilter.delDimension("__invert__");
+  }
+
+  const newTypedCrossfilter = baseTypedCrossfilter
+    .addDimension("__invert__", "enum", invertedMask)
+    .select("__invert__", { mode: "exact", values: 1 });
+
+  const obsCrossfilter = new AnnoMatrixObsCrossfilter(
+    annoMatrix,
+    newTypedCrossfilter
+  );
+
+  dispatch({
+    type: "invert selection",
+    obsCrossfilter,
   });
 };

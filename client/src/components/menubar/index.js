@@ -231,6 +231,11 @@ class MenuBar extends React.PureComponent {
     dispatch(actions.resetSubsetAction());
   };
 
+  handleInvertSelection = () => {
+    const { dispatch } = this.props;
+    dispatch(actions.invertSelectionAction());
+  };
+
   render() {
     const {
       dispatch,
@@ -386,6 +391,7 @@ class MenuBar extends React.PureComponent {
           subsetResetPossible={subsetResetPossible}
           handleSubset={this.handleSubset}
           handleSubsetReset={this.handleSubsetReset}
+          handleInvertSelection={this.handleInvertSelection}
         />
         {disableDiffexp ? null : <DiffexpButtons />}
       </div>

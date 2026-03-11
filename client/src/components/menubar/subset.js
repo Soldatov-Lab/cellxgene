@@ -9,10 +9,24 @@ const Subset = React.memo((props) => {
     subsetResetPossible,
     handleSubset,
     handleSubsetReset,
+    handleInvertSelection,
   } = props;
 
   return (
     <ButtonGroup className={styles.menubarButton}>
+      <Tooltip
+        content="Invert selection"
+        position="bottom"
+        hoverOpenDelay={globals.tooltipHoverOpenDelay}
+      >
+        <AnchorButton
+          type="button"
+          data-testid="invert-selection-button"
+          disabled={!subsetPossible}
+          icon="contrast"
+          onClick={handleInvertSelection}
+        />
+      </Tooltip>
       <Tooltip
         content="Subset to currently selected cells and associated metadata"
         position="bottom"
